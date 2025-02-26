@@ -20,7 +20,7 @@ class ServeCommand extends Command
         throw_if(! file_exists($configFile), new InvalidArgumentException("Invalid config file {$configFile}"));
 
         $localConfig = require $configFile;
-        config()->set('expose', $localConfig);
+        config()->set('expose-server', $localConfig);
     }
 
     public function handle()
