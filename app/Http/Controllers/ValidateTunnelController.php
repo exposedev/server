@@ -55,7 +55,7 @@ class ValidateTunnelController extends Controller
         }
 
         // Also allow the admin dashboard
-        $adminSubdomain = config('expose.admin.subdomain');
+        $adminSubdomain = config('expose-server.admin.subdomain');
         if ($domain === $adminSubdomain.'.'.$hostname) {
             $this->isSuccessful($httpConnection);
 
@@ -104,6 +104,6 @@ class ValidateTunnelController extends Controller
 
     private function getAuthorizedKey(): string
     {
-        return config('expose.validate_tunnel.authorized_key');
+        return config('expose-server.validate_tunnel.authorized_key');
     }
 }
