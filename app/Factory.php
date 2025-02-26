@@ -172,6 +172,15 @@ class Factory
         $this->router->get('/api/health', HealthController::class, $adminCondition);
     }
 
+    protected function addValidateTunnel()
+    {
+        $localCondition = 'request.headers.get("Host") matches "/^'.$this->host.':'.$this->port.'$/i"';
+
+        $this->router->get('/validate-tunnel', ValidateTunnelController::class, $localCondition);
+
+        return $this;
+    }
+
     protected function bindConfiguration()
     {
         app()->singleton(Configuration::class, function ($app) {
