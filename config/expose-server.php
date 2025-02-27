@@ -165,9 +165,7 @@ return [
     |
     */
     'messages' => [
-        'resolve_connection_message' => function ($connectionInfo, $user) {
-            return config('expose-server.messages.message_of_the_day');
-        },
+        'resolve_connection_message' => \Expose\Server\Support\Messages\ResolveConnectionMessage::class,
 
         'message_of_the_day' => 'Thank you for using expose.',
 
