@@ -154,7 +154,14 @@ class ControlMessageController implements MessageComponentInterface
     {
         $deferred = new Deferred();
 
-        $connectionMessageResolver = config('expose-server.messages.resolve_connection_message')($connectionInfo, $user);
+        $resolveConnectionMessage = config('expose-server.messages.resolve_connection_message');
+        if(is_string($resolveConnectionMessage) && class_exists($resolveConnectionMessage)) {
+            $connectionMessageResolver = (new $resolveConnectionMessage())($connectionInfo, $user);
+        } else if($resolveConnectionMessage instanceof \Closure) {
+            $connectionMessageResolver = $resolveConnectionMessage($connectionInfo, $user);
+        } else {
+            $connectionMessageResolver = $resolveConnectionMessage;
+        }
 
         if ($connectionMessageResolver instanceof PromiseInterface) {
             $connectionMessageResolver->then(function ($connectionMessage) use ($connectionInfo, $deferred) {
