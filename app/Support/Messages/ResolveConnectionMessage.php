@@ -8,7 +8,7 @@ use Expose\Server\Connections\ControlConnection;
 
 class ResolveConnectionMessage
 {
-    public function __invoke(ControlConnection $connectionInfo, array $user)
+    public function __invoke(ControlConnection $connectionInfo, array|null $user)
     {
         return config('expose-server.messages.message_of_the_day');
     }
