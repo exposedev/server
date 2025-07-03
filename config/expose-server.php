@@ -9,8 +9,7 @@ return [
     |
     */
     'memory_limit' => '128M',
-
-
+    
     /*
     |--------------------------------------------------------------------------
     | Database
@@ -26,7 +25,7 @@ return [
         '.expose',
         'expose.db',
     ]),
-
+    
     /*
     |--------------------------------------------------------------------------
     | Validate auth tokens
@@ -40,7 +39,7 @@ return [
     |
     */
     'validate_auth_tokens' => false,
-
+    
     /*
     |--------------------------------------------------------------------------
     | Maximum connection length
@@ -53,7 +52,7 @@ return [
     |
     */
     'maximum_connection_length' => 0,
-
+    
     /*
     |--------------------------------------------------------------------------
     | Connection Cooldown Period
@@ -80,7 +79,7 @@ return [
     |
     */
     'maximum_open_connections_per_user' => 0,
-
+    
     /*
     |--------------------------------------------------------------------------
     | Subdomain
@@ -92,7 +91,7 @@ return [
     |
     */
     'subdomain' => 'expose',
-
+    
     /*
     |--------------------------------------------------------------------------
     | Reserved Subdomain
@@ -103,7 +102,7 @@ return [
     |
     */
     'reserved_subdomains' => [],
-
+    
     /*
     |--------------------------------------------------------------------------
     | Subdomain Generator
@@ -115,7 +114,7 @@ return [
     |
     */
     'subdomain_generator' => \Expose\Server\SubdomainGenerator\RandomSubdomainGenerator::class,
-
+    
     /*
     |--------------------------------------------------------------------------
     | Connection Callback
@@ -127,45 +126,44 @@ return [
     |
     */
     'connection_callback' => null,
-
-
+    
     'connection_callbacks' => [
         'webhook' => [
             'url' => null,
             'secret' => null,
         ],
     ],
-
+    
     /*
-        |--------------------------------------------------------------------------
-        | Users
-        |--------------------------------------------------------------------------
-        |
-        | The admin dashboard of expose is protected via HTTP basic authentication
-        | Here you may add the user/password combinations that you want to
-        | accept as valid logins for the dashboard.
-        |
-        */
+    |--------------------------------------------------------------------------
+    | Users
+    |--------------------------------------------------------------------------
+    |
+    | The admin dashboard of expose is protected via HTTP basic authentication
+    | Here you may add the user/password combinations that you want to
+    | accept as valid logins for the dashboard.
+    |
+    */
     'users' => [
-        'username' => 'secret',
+        'username' => 'password',
     ],
-
+    
     /*
-        |--------------------------------------------------------------------------
-        | User Repository
-        |--------------------------------------------------------------------------
-        |
-        | This is the user repository, which by default loads and saves all authorized
-        | users in a SQLite database. You can implement your own user repository
-        | if you want to store your users in a different store (Redis, MySQL, etc.)
-        |
-        */
+    |--------------------------------------------------------------------------
+    | User Repository
+    |--------------------------------------------------------------------------
+    |
+    | This is the user repository, which by default loads and saves all authorized
+    | users in a SQLite database. You can implement your own user repository
+    | if you want to store your users in a different store (Redis, MySQL, etc.)
+    |
+    */
     'user_repository' => \Expose\Server\UserRepository\DatabaseUserRepository::class,
-
+    
     'subdomain_repository' => \Expose\Server\SubdomainRepository\DatabaseSubdomainRepository::class,
-
+    
     'logger_repository' => \Expose\Server\LoggerRepository\DatabaseLogger::class,
-
+    
     /*
     |--------------------------------------------------------------------------
     | Messages
@@ -180,28 +178,28 @@ return [
         'resolve_connection_message' => function ($connectionInfo, $user) {
             return config('expose-server.messages.message_of_the_day');
         },
-
+        
         'message_of_the_day' => 'Thank you for using expose.',
-
+        
         'invalid_auth_token' => 'Authentication failed. Please check your authentication token and try again.',
-
+        
         'subdomain_taken' => 'The chosen subdomain :subdomain is already taken. Please choose a different subdomain.',
-
+        
         'subdomain_reserved' => 'The chosen subdomain :subdomain is not available. Please choose a different subdomain.',
-
+        
         'custom_subdomain_unauthorized' => 'You are not allowed to specify custom subdomains. Please upgrade to Expose Pro. Assigning a random subdomain instead.',
-
+        
         'custom_domain_unauthorized' => 'You are not allowed to use this custom domain. If you think this should work, double-check the server setting and try again.',
-
+        
         'maximum_connection_length_reached' => 'You have reached the maximum connection length for this server. Please upgrade to Expose Pro for unlimited connection length.',
         'connection_cooldown_active' => 'You\'ve used your free session for now. Please wait :cooldown minutes before reconnecting, or upgrade to Expose Pro → https://expose.dev/pro',
     ],
-
+    
     'statistics' => [
         'enable_statistics' => true,
-
+        
         'interval_in_seconds' => 3600,
-
+        
         'repository' => \Expose\Server\StatisticsRepository\DatabaseStatisticsRepository::class,
     ],
 ];
