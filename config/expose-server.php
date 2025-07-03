@@ -204,4 +204,8 @@ return [
 
         'repository' => \Expose\Server\StatisticsRepository\DatabaseStatisticsRepository::class,
     ],
+
+    'validate_tunnel' => [
+        'authorized_key' => 'asHzMGp4y4fYmNzWAUmgsZZbcjSM5e',
+    ],
 ];
