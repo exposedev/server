@@ -182,6 +182,34 @@ class TunnelTest extends TestCase
     }
 
     /** @test */
+    public function it_refuses_certificate_issuance_for_a_host_without_an_active_tunnel()
+    {
+        $this->expectException(ResponseException::class);
+        $this->expectExceptionMessage(404);
+
+        $this->await($this->browser->get('http://127.0.0.1:8080/expose/can-issue-certificate?domain=tunnel.localhost', [
+            'Host' => '127.0.0.1:8080',
+        ]));
+    }
+
+    /** @test */
+    public function it_allows_certificate_issuance_for_a_host_with_an_active_tunnel()
+    {
+        $this->app['config']['expose-server.validate_auth_tokens'] = false;
+
+        $this->createTestHttpServer();
+
+        $client = $this->createClient();
+        $this->await($client->connectToServer('127.0.0.1:8085', 'tunnel'));
+
+        $response = $this->await($this->browser->get('http://127.0.0.1:8080/expose/can-issue-certificate?domain=tunnel.localhost', [
+            'Host' => '127.0.0.1:8080',
+        ]));
+
+        $this->assertSame(200, $response->getStatusCode());
+    }
+
+    /** @test */
     public function it_sends_incoming_requests_to_the_connected_client()
     {
         $this->app['config']['expose-server.validate_auth_tokens'] = false;
