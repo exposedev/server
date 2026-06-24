@@ -40,9 +40,9 @@ class ConnectionManager implements ConnectionManagerContract
         $this->logger = $logger;
     }
 
-    public function limitConnectionLength(ControlConnection $connection, int $maximumConnectionLength)
+    public function limitConnectionLength(ControlConnection $connection, int $maximumConnectionLength, ?array $user = null)
     {
-        if ($maximumConnectionLength === 0) {
+        if ($maximumConnectionLength === 0 || $this->userIsExemptFromConnectionLimit($user)) {
             return;
         }
 
@@ -59,6 +59,11 @@ class ConnectionManager implements ConnectionManagerContract
                 $this->statisticsCollector->cooldownTriggered();
             }
         });
+    }
+
+    protected function userIsExemptFromConnectionLimit(?array $user): bool
+    {
+        return ! is_null($user) && (int) ($user['can_specify_subdomains'] ?? 0) === 1;
     }
 
     public function storeConnection(string $host, ?string $subdomain, ?string $serverHost, ConnectionInterface $connection): ControlConnection

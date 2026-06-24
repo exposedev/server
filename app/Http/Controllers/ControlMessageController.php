@@ -190,7 +190,7 @@ class ControlMessageController implements MessageComponentInterface
 
                 $connectionInfo = $this->connectionManager->storeConnection($data->host, $data->subdomain, $data->server_host, $connection);
 
-                $this->connectionManager->limitConnectionLength($connectionInfo, config('expose-server.maximum_connection_length'));
+                $this->connectionManager->limitConnectionLength($connectionInfo, config('expose-server.maximum_connection_length'), $user);
 
                 return $this->resolveConnectionMessage($connectionInfo, $user);
             })
