@@ -79,8 +79,8 @@ class DatabaseDomainRepository implements DomainRepository
         $this->getDomainByName($data['domain'])
             ->then(function ($registeredDomain) use ($data, $deferred) {
                 $this->database->query("
-                    INSERT INTO domains (user_id, domain, created_at)
-                    VALUES (:user_id, :domain, DATETIME('now'))
+                    INSERT INTO domains (user_id, domain, error_page, created_at)
+                    VALUES (:user_id, :domain, :error_page, DATETIME('now'))
                 ", $data)
                     ->then(function (Result $result) use ($deferred) {
                         $this->database->query('SELECT * FROM domains WHERE id = :id', ['id' => $result->insertId])
@@ -128,7 +128,15 @@ class DatabaseDomainRepository implements DomainRepository
     {
         $deferred = new Deferred();
 
-        // TODO
+        $this->database->query('UPDATE domains SET error_page = :error_page WHERE (id = :id OR domain = :id)', array_merge($data, [
+            'id' => $id,
+        ]))
+            ->then(function (Result $result) use ($deferred, $id) {
+                $this->getDomainById($id)
+                    ->then(function ($domain) use ($deferred) {
+                        $deferred->resolve($domain);
+                    });
+            });
 
         return $deferred->promise();
     }

@@ -8,7 +8,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
 use Ratchet\ConnectionInterface;
 
-class StoreDomainController extends AdminController
+class UpdateDomainController extends AdminController
 {
     protected $keepConnectionOpen = true;
 
@@ -26,11 +26,10 @@ class StoreDomainController extends AdminController
 
     public function handle(Request $request, ConnectionInterface $httpConnection)
     {
+        $id = $request->get('id');
+
         $validator = Validator::make($request->all(), [
-            'domain' => 'required',
             'error_page' => 'nullable|string'
-        ], [
-            'required' => 'The :attribute field is required.',
         ]);
 
         if ($validator->fails()) {
@@ -42,7 +41,7 @@ class StoreDomainController extends AdminController
 
         $this->userRepository
             ->getUserByToken($request->get('auth_token', ''))
-            ->then(function ($user) use ($httpConnection, $request) {
+            ->then(function ($user) use ($httpConnection, $request, $id) {
                 if (is_null($user)) {
                     $httpConnection->send(respond_json(['error' => 'The user does not exist'], 404));
                     $httpConnection->close();
@@ -57,14 +56,12 @@ class StoreDomainController extends AdminController
                     return;
                 }
 
-                $insertData = [
-                    'user_id' => $user['id'],
-                    'domain' => $request->get('domain'),
+                $updateData = [
                     'error_page' => $request->get('error_page'),
                 ];
 
                 $this->domainRepository
-                    ->storeDomain($insertData)
+                    ->updateDomain($id, $updateData)
                     ->then(function ($domain) use ($httpConnection) {
                         $httpConnection->send(respond_json(['domain' => $domain], 200));
                         $httpConnection->close();

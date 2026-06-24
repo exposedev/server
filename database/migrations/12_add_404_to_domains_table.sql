@@ -1,0 +1,1 @@
+ALTER TABLE domains ADD COLUMN error_page TEXT DEFAULT NULL;

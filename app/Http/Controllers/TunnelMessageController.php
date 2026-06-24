@@ -6,6 +6,7 @@ use Expose\Server\Configuration;
 use Expose\Server\Connections\ControlConnection;
 use Expose\Server\Connections\HttpConnection;
 use Expose\Server\Contracts\ConnectionManager;
+use Expose\Server\Contracts\DomainRepository;
 use Expose\Server\Contracts\StatisticsCollector;
 use Expose\Common\Http\Controllers\Controller;
 use GuzzleHttp\Psr7\Message;
@@ -31,11 +32,15 @@ class TunnelMessageController extends Controller
     /** @var StatisticsCollector */
     protected $statisticsCollector;
 
-    public function __construct(ConnectionManager $connectionManager, StatisticsCollector $statisticsCollector, Configuration $configuration)
+    /** @var DomainRepository */
+    protected $domainRepository;
+
+    public function __construct(ConnectionManager $connectionManager, StatisticsCollector $statisticsCollector, Configuration $configuration, DomainRepository $domainRepository)
     {
         $this->connectionManager = $connectionManager;
         $this->configuration = $configuration;
         $this->statisticsCollector = $statisticsCollector;
+        $this->domainRepository = $domainRepository;
     }
 
     public function handle(Request $request, ConnectionInterface $httpConnection)
@@ -55,11 +60,24 @@ class TunnelMessageController extends Controller
         $controlConnection = $this->connectionManager->findControlConnectionForSubdomainAndServerHost($subdomain, $serverHost);
 
         if (is_null($controlConnection)) {
-            $httpConnection->send(
-                respond_html($this->getBlade($httpConnection, 'server.errors.404', ['subdomain' => $subdomain]), 404)
-            );
-            $httpConnection->close();
+            $this->domainRepository
+                ->getDomainByName(strtolower($serverHost))
+                ->then(function ($domain) use ($subdomain, $httpConnection) {
+                    if (is_null($domain) || is_null($domain['error_page'])) {
+                        $errorPageContent = $this->getBlade($httpConnection, 'server.errors.404', ['subdomain' => $subdomain]);
+                    } else {
+                        $errorPageContent = str_replace(
+                            ['%%subdomain%%'],
+                            [$subdomain],
+                            $domain['error_page']
+                        );
+                    }
 
+                    $httpConnection->send(
+                        respond_html($errorPageContent, 404)
+                    );
+                    $httpConnection->close();
+                });
             return;
         }
 

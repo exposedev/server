@@ -32,6 +32,7 @@ use Expose\Server\Http\Controllers\Admin\StoreDomainController;
 use Expose\Server\Http\Controllers\Admin\StoreSettingsController;
 use Expose\Server\Http\Controllers\Admin\StoreSubdomainController;
 use Expose\Server\Http\Controllers\Admin\StoreUsersController;
+use Expose\Server\Http\Controllers\Admin\UpdateDomainController;
 use Expose\Server\Http\Controllers\ControlMessageController;
 use Expose\Server\Http\Controllers\HealthController;
 use Expose\Server\Http\Controllers\TunnelMessageController;
@@ -160,6 +161,7 @@ class Factory
         $this->router->get('/api/logs/{subdomain}', GetLogsForSubdomainController::class, $adminCondition);
 
         $this->router->post('/api/domains', StoreDomainController::class, $adminCondition);
+        $this->router->put('/api/domains/{id}', UpdateDomainController::class, $adminCondition);
         $this->router->delete('/api/domains/{domain}', DeleteSubdomainController::class, $adminCondition);
 
         $this->router->post('/api/subdomains', StoreSubdomainController::class, $adminCondition);

@@ -79,6 +79,109 @@ class TunnelTest extends TestCase
     }
 
     /** @test */
+    public function it_returns_default_404_pages_for_custom_domains_when_no_custom_error_page_is_specified()
+    {
+        $this->app['config']['expose-server.validate_auth_tokens'] = true;
+
+        $user = $this->createUser([
+            'name' => 'Marcel',
+            'can_specify_domains' => 1,
+        ]);
+
+        $this->await($this->browser->post('http://127.0.0.1:8080/api/domains', [
+            'Host' => 'expose.localhost',
+            'Authorization' => base64_encode('username:secret'),
+            'Content-Type' => 'application/json',
+        ], json_encode([
+            'domain' => 'share.beyondco.de',
+            'auth_token' => $user->auth_token,
+        ])));
+
+        try {
+            $this->await($this->browser->get('http://127.0.0.1:8080/', [
+                'Host' => 'tunnel.share.beyondco.de',
+            ]));
+        } catch (ResponseException $e) {
+            $response = $e->getResponse();
+
+            $this->assertStringContainsString('<title>Expose</title>', $response->getBody()->getContents());
+        }
+    }
+
+    /** @test */
+    public function it_returns_custom_404_pages_for_custom_domains_when_specified()
+    {
+        $this->app['config']['expose-server.validate_auth_tokens'] = true;
+
+        $user = $this->createUser([
+            'name' => 'Marcel',
+            'can_specify_domains' => 1,
+        ]);
+
+        $this->await($this->browser->post('http://127.0.0.1:8080/api/domains', [
+            'Host' => 'expose.localhost',
+            'Authorization' => base64_encode('username:secret'),
+            'Content-Type' => 'application/json',
+        ], json_encode([
+            'domain' => 'share.beyondco.de',
+            'error_page' => '<h1>Custom 404 for %%subdomain%%</h1>',
+            'auth_token' => $user->auth_token,
+        ])));
+
+        try {
+            $this->await($this->browser->get('http://127.0.0.1:8080/', [
+                'Host' => 'tunnel.share.beyondco.de',
+            ]));
+        } catch (ResponseException $e) {
+            $response = $e->getResponse();
+
+            $this->assertStringContainsString('<h1>Custom 404 for tunnel</h1>', $response->getBody()->getContents());
+        }
+    }
+
+    /** @test */
+    public function it_can_update_404_pages_for_custom_domains()
+    {
+        $this->app['config']['expose-server.validate_auth_tokens'] = true;
+
+        $user = $this->createUser([
+            'name' => 'Marcel',
+            'can_specify_domains' => 1,
+        ]);
+
+        $domainResponse = $this->await($this->browser->post('http://127.0.0.1:8080/api/domains', [
+            'Host' => 'expose.localhost',
+            'Authorization' => base64_encode('username:secret'),
+            'Content-Type' => 'application/json',
+        ], json_encode([
+            'domain' => 'share.beyondco.de',
+            'auth_token' => $user->auth_token,
+        ])));
+
+        $domain = json_decode($domainResponse->getBody()->getContents())->domain;
+
+        $this->await($this->browser->put('http://127.0.0.1:8080/api/domains/'.$domain->id, [
+            'Host' => 'expose.localhost',
+            'Authorization' => base64_encode('username:secret'),
+            'Content-Type' => 'application/json',
+        ], json_encode([
+            'domain' => 'share.beyondco.de',
+            'error_page' => '<h1>Custom 404 for %%subdomain%%</h1>',
+            'auth_token' => $user->auth_token,
+        ])));
+
+        try {
+            $this->await($this->browser->get('http://127.0.0.1:8080/', [
+                'Host' => 'tunnel.share.beyondco.de',
+            ]));
+        } catch (ResponseException $e) {
+            $response = $e->getResponse();
+
+            $this->assertStringContainsString('<h1>Custom 404 for tunnel</h1>', $response->getBody()->getContents());
+        }
+    }
+
+    /** @test */
     public function it_sends_incoming_requests_to_the_connected_client()
     {
         $this->app['config']['expose-server.validate_auth_tokens'] = false;
