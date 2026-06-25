@@ -210,6 +210,40 @@ class TunnelTest extends TestCase
     }
 
     /** @test */
+    public function it_allows_certificate_issuance_for_the_server_host()
+    {
+        // The bare server hostname is not tunnel-backed (the wildcard cert
+        // covers *.host but not the host itself) and must always be allowed.
+        $response = $this->await($this->browser->get('http://127.0.0.1:8080/expose/can-issue-certificate?domain=localhost', [
+            'Host' => '127.0.0.1:8080',
+        ]));
+
+        $this->assertSame(200, $response->getStatusCode());
+    }
+
+    /** @test */
+    public function it_allows_certificate_issuance_for_the_admin_subdomain()
+    {
+        $response = $this->await($this->browser->get('http://127.0.0.1:8080/expose/can-issue-certificate?domain=expose.localhost', [
+            'Host' => '127.0.0.1:8080',
+        ]));
+
+        $this->assertSame(200, $response->getStatusCode());
+    }
+
+    /** @test */
+    public function it_allows_certificate_issuance_for_configured_always_allow_hosts()
+    {
+        $this->app['config']['expose-server.on_demand_tls.always_allow_hosts'] = ['status.example.com'];
+
+        $response = $this->await($this->browser->get('http://127.0.0.1:8080/expose/can-issue-certificate?domain=status.example.com', [
+            'Host' => '127.0.0.1:8080',
+        ]));
+
+        $this->assertSame(200, $response->getStatusCode());
+    }
+
+    /** @test */
     public function it_sends_incoming_requests_to_the_connected_client()
     {
         $this->app['config']['expose-server.validate_auth_tokens'] = false;

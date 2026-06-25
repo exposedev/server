@@ -106,6 +106,22 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | On-Demand TLS
+    |--------------------------------------------------------------------------
+    |
+    | When you terminate TLS with Caddy's on-demand TLS, point its "ask"
+    | endpoint at /expose/can-issue-certificate. The server then only permits
+    | certificate issuance for its own host, the admin subdomain, or a host
+    | that currently has a live tunnel. List any additional non-tunnel hosts
+    | that should always be allowed to obtain a certificate below.
+    |
+    */
+    'on_demand_tls' => [
+        'always_allow_hosts' => [],
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
     | Subdomain Generator
     |--------------------------------------------------------------------------
     |
