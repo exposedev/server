@@ -18,6 +18,8 @@ interface ConnectionManager
 
     public function getHttpConnectionForRequestId(string $requestId): ?HttpConnection;
 
+    public function removeHttpConnection(string $requestId): void;
+
     public function removeControlConnection($connection);
 
     public function findControlConnectionForSubdomainAndServerHost($subdomain, $serverHost): ?ControlConnection;

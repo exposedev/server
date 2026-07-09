@@ -107,6 +107,9 @@ class TunnelMessageController extends Controller
         $requestId = $request->header('X-Expose-Request-ID');
 
         $httpConnection = $this->connectionManager->storeHttpConnection($httpConnection, $requestId);
+        $httpConnection->getConnection()->on('close', function () use ($requestId) {
+            $this->connectionManager->removeHttpConnection($requestId);
+        });
 
         transform($this->passRequestThroughModifiers($request, $httpConnection), function (Request $request) use ($httpConnection, $controlConnection, $requestId) {
             $controlConnection->once('proxy_ready_'.$requestId, function (ConnectionInterface $proxy) use ($httpConnection, $request) {

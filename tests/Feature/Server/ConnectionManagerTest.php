@@ -9,6 +9,7 @@ use Expose\Server\Contracts\StatisticsCollector;
 use Expose\Server\Contracts\SubdomainGenerator;
 use Expose\Server\Contracts\UserRepository;
 use Mockery;
+use Ratchet\ConnectionInterface;
 use React\EventLoop\LoopInterface;
 use Tests\Feature\TestCase;
 
@@ -95,5 +96,67 @@ class ConnectionManagerTest extends TestCase
         $this->assertNotNull($timerCallback);
 
         $timerCallback();
+    }
+
+    /** @test */
+    public function it_uses_indexes_for_client_and_subdomain_lookups()
+    {
+        $statisticsCollector = Mockery::mock(StatisticsCollector::class);
+        $statisticsCollector->shouldReceive('siteShared')->twice();
+
+        $logger = Mockery::mock(LoggerRepository::class);
+        $logger->shouldReceive('logSubdomain')->twice();
+
+        $manager = new ConnectionManager(
+            Mockery::mock(SubdomainGenerator::class),
+            $statisticsCollector,
+            $logger,
+            Mockery::mock(LoopInterface::class)
+        );
+
+        $firstConnection = $this->mockSocketConnection();
+        $secondConnection = $this->mockSocketConnection();
+
+        $first = $manager->storeConnection('127.0.0.1:8085', 'shared', 'localhost', $firstConnection);
+        $second = $manager->storeConnection('127.0.0.1:8086', 'shared', 'localhost', $secondConnection);
+
+        $this->assertSame($second, $manager->findControlConnectionForSubdomainAndServerHost('shared', 'localhost'));
+        $this->assertSame($first, $manager->findControlConnectionForClientId($first->client_id));
+
+        $manager->removeControlConnection($secondConnection);
+
+        $this->assertSame($first, $manager->findControlConnectionForSubdomainAndServerHost('shared', 'localhost'));
+        $this->assertNull($manager->findControlConnectionForClientId($second->client_id));
+    }
+
+    /** @test */
+    public function it_can_remove_http_connections_by_request_id()
+    {
+        $manager = new ConnectionManager(
+            Mockery::mock(SubdomainGenerator::class),
+            Mockery::mock(StatisticsCollector::class),
+            Mockery::mock(LoggerRepository::class),
+            Mockery::mock(LoopInterface::class)
+        );
+
+        $connection = $this->mockSocketConnection();
+
+        $manager->storeHttpConnection($connection, 'request-one');
+        $this->assertNotNull($manager->getHttpConnectionForRequestId('request-one'));
+
+        $manager->removeHttpConnection('request-one');
+
+        $this->assertNull($manager->getHttpConnectionForRequestId('request-one'));
+    }
+
+    protected function mockSocketConnection(): ConnectionInterface
+    {
+        $connection = Mockery::mock(ConnectionInterface::class);
+        $connection->httpRequest = new \GuzzleHttp\Psr7\Request('GET', '/expose/control?authToken=test-token&version=test-version');
+        $connection->remoteAddress = '127.0.0.1';
+        $connection->shouldReceive('send')->byDefault();
+        $connection->shouldReceive('close')->byDefault();
+
+        return $connection;
     }
 }

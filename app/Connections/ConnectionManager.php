@@ -18,6 +18,12 @@ class ConnectionManager implements ConnectionManagerContract
     protected $connections = [];
 
     /** @var array */
+    protected $connectionsByClientId = [];
+
+    /** @var array */
+    protected $httpConnectionsBySubdomainAndServerHost = [];
+
+    /** @var array */
     protected $httpConnections = [];
 
     /** @var SubdomainGenerator */
@@ -82,6 +88,8 @@ class ConnectionManager implements ConnectionManagerContract
         );
 
         $this->connections[] = $storedConnection;
+        $this->connectionsByClientId[$clientId] = $storedConnection;
+        $this->httpConnectionsBySubdomainAndServerHost[$this->httpConnectionKey($storedConnection->subdomain, $storedConnection->serverHost)][$clientId] = $storedConnection;
 
         $this->statisticsCollector->siteShared($this->getAuthTokenFromConnection($connection));
 
@@ -116,6 +124,7 @@ class ConnectionManager implements ConnectionManagerContract
         );
 
         $this->connections[] = $storedConnection;
+        $this->connectionsByClientId[$clientId] = $storedConnection;
 
         $this->statisticsCollector->portShared($this->getAuthTokenFromConnection($connection));
 
@@ -158,44 +167,59 @@ class ConnectionManager implements ConnectionManagerContract
         return $this->httpConnections[$requestId] ?? null;
     }
 
+    public function removeHttpConnection(string $requestId): void
+    {
+        unset($this->httpConnections[$requestId]);
+    }
+
     public function removeControlConnection($connection)
     {
         if (isset($connection->request_id)) {
-            if (isset($this->httpConnections[$connection->request_id])) {
-                unset($this->httpConnections[$connection->request_id]);
-            }
+            $this->removeHttpConnection($connection->request_id);
         }
 
         if (isset($connection->client_id)) {
             $clientId = $connection->client_id;
 
-            $controlConnection = collect($this->connections)->first(function ($connection) use ($clientId) {
-                return $connection->client_id == $clientId;
-            });
+            $controlConnection = $this->connectionsByClientId[$clientId] ?? null;
 
             if ($controlConnection instanceof TcpControlConnection) {
                 $controlConnection->stop();
-                $controlConnection = null;
             }
 
-            $this->connections = collect($this->connections)->reject(function ($connection) use ($clientId) {
-                return $connection->client_id == $clientId;
-            })->toArray();
+            if ($controlConnection instanceof ControlConnection && ! $controlConnection instanceof TcpControlConnection) {
+                $httpConnectionKey = $this->httpConnectionKey($controlConnection->subdomain, $controlConnection->serverHost);
+
+                unset($this->httpConnectionsBySubdomainAndServerHost[$httpConnectionKey][$clientId]);
+
+                if (empty($this->httpConnectionsBySubdomainAndServerHost[$httpConnectionKey])) {
+                    unset($this->httpConnectionsBySubdomainAndServerHost[$httpConnectionKey]);
+                }
+            }
+
+            unset($this->connectionsByClientId[$clientId]);
+
+            foreach ($this->connections as $index => $storedConnection) {
+                if ($storedConnection->client_id == $clientId) {
+                    unset($this->connections[$index]);
+                    break;
+                }
+            }
+
+            $this->connections = array_values($this->connections);
         }
     }
 
     public function findControlConnectionForSubdomainAndServerHost($subdomain, $serverHost): ?ControlConnection
     {
-        return collect($this->connections)->last(function ($connection) use ($subdomain, $serverHost) {
-            return $connection->subdomain == $subdomain && $connection->serverHost === $serverHost;
-        });
+        $connections = $this->httpConnectionsBySubdomainAndServerHost[$this->httpConnectionKey($subdomain, $serverHost)] ?? [];
+
+        return empty($connections) ? null : end($connections);
     }
 
     public function findControlConnectionForClientId(string $clientId): ?ControlConnection
     {
-        return collect($this->connections)->last(function ($connection) use ($clientId) {
-            return $connection->client_id == $clientId;
-        });
+        return $this->connectionsByClientId[$clientId] ?? null;
     }
 
     public function findControlConnectionsForIp(string $ip): array
@@ -220,6 +244,11 @@ class ConnectionManager implements ConnectionManagerContract
     protected function getAuthTokenFromConnection(ConnectionInterface $connection): string
     {
         return QueryParameters::create($connection->httpRequest)->get('authToken');
+    }
+
+    protected function httpConnectionKey($subdomain, $serverHost): string
+    {
+        return $serverHost."\0".$subdomain;
     }
 
     public function getConnectionsForAuthToken(string $authToken): array

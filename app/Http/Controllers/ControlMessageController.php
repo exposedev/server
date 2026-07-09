@@ -57,7 +57,9 @@ class ControlMessageController implements MessageComponentInterface
     {
         if (isset($connection->request_id)) {
             $httpConnection = $this->connectionManager->getHttpConnectionForRequestId($connection->request_id);
-            $httpConnection->close();
+            if ($httpConnection !== null) {
+                $httpConnection->close();
+            }
         }
 
         $this->connectionManager->removeControlConnection($connection);
@@ -92,7 +94,9 @@ class ControlMessageController implements MessageComponentInterface
     {
         $httpConnection = $this->connectionManager->getHttpConnectionForRequestId($requestId);
 
-        $httpConnection->send($response);
+        if ($httpConnection !== null) {
+            $httpConnection->send($response);
+        }
     }
 
     protected function authenticate(ConnectionInterface $connection, $data)
